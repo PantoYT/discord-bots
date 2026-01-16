@@ -15,6 +15,7 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 OWNER_ID = int(os.getenv("OWNER_ID"))
+GUILD_IDS = [int(gid) for gid in os.getenv("GUILD_IDS").split(",")]
 EPIC_API_KEY = os.getenv("EPIC_API_KEY")
 EPIC_API_URL = "https://epic-games-store-free-games.p.rapidapi.com/free?country=PL"
 HEADERS = {
@@ -40,6 +41,11 @@ pending_confirmations = {}
 @bot.event
 async def on_ready():
     global last_daily_run
+    for guild in bot.guilds:
+        if guild.id not in GUILD_IDS:
+            print(f"Unauthorized guild {guild.name} ({guild.id}) — leaving.")
+            await guild.leave()
+
     now = datetime.now(CET)
     print(f"Bot logged in as {bot.user} at {now.strftime('%Y-%m-%d %H:%M:%S')}")
     
@@ -62,6 +68,15 @@ async def on_ready():
         await run_check()
     
     daily_check.start()
+# -------------------------------
+# Leave if unaothorized guild id
+# -------------------------------
+@bot.event
+async def on_guild_join(guild):
+    if guild.id not in GUILD_IDS:
+        print(f"Unauthorized guild {guild.name} ({guild.id}) — leaving.")
+        await guild.leave()
+
 
 # -------------------------------
 # Load or initialize posted games
