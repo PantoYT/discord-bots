@@ -209,8 +209,6 @@ def make_embeds(games, ctx_mention=None, upcoming=False, wide_image=False):
             else:
                 embed.add_field(name="Available Until", value=date_field, inline=True)
         
-        embed.add_field(name="Store Link", value=f"[Get it here]({url})", inline=False)
-        
         if wide_image and image_url:
             embed.set_image(url=image_url)
         elif thumbnail_url:
