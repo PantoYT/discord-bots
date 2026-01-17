@@ -22,7 +22,7 @@ HEADERS = {
 }
 
 POSTED_FILE = "posted_games.json"
-CHANNEL_NAME = "free-games"  # Name of channels to auto-detect
+CHANNEL_NAME = "free-games"
 CET = pytz.timezone('Europe/Warsaw')
 
 # -------------------------------
@@ -33,7 +33,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=intents)
 
 pending_confirmations = {}
-pending_channel_creation = {}  # guild_id: user_id mapping
+pending_channel_creation = {}
 
 # -------------------------------
 # Sync slash commands
@@ -45,7 +45,6 @@ async def on_ready():
     print(f"Bot logged in as {bot.user} at {now.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Connected to {len(bot.guilds)} guilds")
     
-    # Auto-detect channels named "free-games"
     detected_channels = []
     guilds_without_channel = []
     
@@ -65,10 +64,8 @@ async def on_ready():
     if detected_channels:
         print(f"Total channels detected: {len(detected_channels)}")
     
-    # Notify guilds without the channel
     for guild in guilds_without_channel:
         try:
-            # Try to find a general/system channel to send the message
             target_channel = guild.system_channel or guild.text_channels[0] if guild.text_channels else None
             
             if target_channel:
@@ -189,7 +186,6 @@ def make_embeds(games, ctx_mention=None, upcoming=False, wide_image=False):
                     except:
                         pass
 
-        # Find best image (prefer wide images for wide_image mode)
         image_url = None
         thumbnail_url = None
         
@@ -201,7 +197,6 @@ def make_embeds(games, ctx_mention=None, upcoming=False, wide_image=False):
             elif img_type == "Thumbnail":
                 thumbnail_url = img.get("url")
         
-        # Fallback to thumbnail if no wide image found
         if wide_image and not image_url:
             image_url = thumbnail_url
 
@@ -246,7 +241,6 @@ async def run_check(ctx_mention=None, force=False, interaction_channel=None):
         print("Failed to fetch games")
         return False
 
-    # If called from interaction, use that channel; otherwise use all free-games channels
     if interaction_channel:
         channels = [interaction_channel]
     else:
@@ -277,7 +271,6 @@ async def run_check(ctx_mention=None, force=False, interaction_channel=None):
     embeds_current = make_embeds(current_games, ctx_mention=ctx_mention, upcoming=False, wide_image=True)
     embeds_upcoming = make_embeds(new_upcoming, ctx_mention=ctx_mention, upcoming=True, wide_image=True)
 
-    # Post to all detected channels
     for channel in channels:
         try:
             if embeds_current:
@@ -437,24 +430,20 @@ async def confirmchannel_slash(interaction: discord.Interaction):
         await interaction.response.send_message("This command must be used in a server.", ephemeral=True)
         return
     
-    # Check if channel already exists
     for channel in guild.text_channels:
         if channel.name == CHANNEL_NAME:
             await interaction.response.send_message(f"A channel named `{CHANNEL_NAME}` already exists in this server.", ephemeral=True)
             return
     
-    # Check permissions
     if not guild.me.guild_permissions.manage_channels:
         await interaction.response.send_message("Fred doesn't have permission to create channels. Please give Fred the 'Manage Channels' permission or create the channel manually.", ephemeral=True)
         return
     
-    # Check if user has permission
     if not interaction.user.guild_permissions.manage_channels:
         await interaction.response.send_message("You need 'Manage Channels' permission to use this command.", ephemeral=True)
         return
     
     try:
-        # Create the channel
         new_channel = await guild.create_text_channel(
             name=CHANNEL_NAME,
             topic="Free games from Epic Games Store - Updated daily by Fred"
@@ -478,7 +467,6 @@ async def confirmchannel_slash(interaction: discord.Interaction):
         
         await interaction.response.send_message(embed=embed)
         
-        # Send welcome message to the new channel
         welcome_embed = discord.Embed(
             title="Welcome to Free Games Updates",
             description="Fred will post Epic Games Store free game updates here daily at 17:01 CET.",
